@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "693469898239",
+    "project_id": "travel-app-2dcec",
+    "storage_bucket": "travel-app-2dcec.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:693469898239:android:966d4f3cd80338310af3ca",
+        "android_client_info": {
+          "package_name": "com.ahad.travelapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "693469898239-f3g4gl8e9qrn9llmmlci30l5nblrudat.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ahad.travelapp",
+            "certificate_hash": "4d539efa064e47e597f2d4f6d21a513d3f2dff80"
+          }
+        },
+        {
+          "client_id": "693469898239-4kuv9rn45cqml1pdsfj7kc33efkohvkp.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCR0cAQLq_ROAdUW7NWFWjF4HHe2DFXKog"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "693469898239-4kuv9rn45cqml1pdsfj7kc33efkohvkp.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
