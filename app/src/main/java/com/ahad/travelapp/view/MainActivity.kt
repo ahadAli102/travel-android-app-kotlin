@@ -1,8 +1,9 @@
-package com.ahad.travelapp
+package com.ahad.travelapp.view
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import com.ahad.travelapp.R
 import com.google.firebase.firestore.FirebaseFirestore
 
 class MainActivity : AppCompatActivity() {

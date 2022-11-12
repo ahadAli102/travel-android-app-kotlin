@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_auth"
+    app:startDestination="@id/authLoginFragment">
+
+    <fragment
+        android:id="@+id/authLoginFragment"
+        android:name="com.ahad.travelapp.view.AuthLoginFragment"
+        android:label="Login"
+        tools:layout="@layout/fragment_auth_login" >
+        <action
+            android:id="@+id/action_authLoginFragment_to_authRegisterFragment"
+            app:destination="@id/authRegisterFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right"/>
+        <action
+            android:id="@+id/action_authLoginFragment_to_authResetPasswordFragment"
+            app:destination="@id/authResetPasswordFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right"/>
+    </fragment>
+    <fragment
+        android:id="@+id/authRegisterFragment"
+        android:name="com.ahad.travelapp.view.AuthRegisterFragment"
+        android:label="Register"
+        tools:layout="@layout/fragment_auth_register" >
+        <action
+            android:id="@+id/action_authRegisterFragment_to_authLoginFragment"
+            app:destination="@id/authLoginFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right"/>
+    </fragment>
+    <fragment
+        android:id="@+id/authResetPasswordFragment"
+        android:name="com.ahad.travelapp.view.AuthResetPasswordFragment"
+        android:label="Reset password"
+        tools:layout="@layout/fragment_auth_reset_password" >
+        <action
+            android:id="@+id/action_authResetPasswordFragment_to_authLoginFragment"
+            app:destination="@id/authLoginFragment"
+            app:enterAnim="@anim/slide_out_left"
+            app:exitAnim="@anim/slide_in_right"
+            app:popEnterAnim="@anim/slide_out_right"
+            app:popExitAnim="@anim/slide_in_left"
+            />
+    </fragment>
+</navigation>
