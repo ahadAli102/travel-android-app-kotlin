@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_main"
+    app:startDestination="@id/mainAllPostFragment">
+
+    <fragment
+        android:id="@+id/mainAllPostFragment"
+        android:name="com.ahad.travelapp.view.MainAllPostFragment"
+        android:label="fragment_main_all_post"
+        tools:layout="@layout/fragment_main_all_post" >
+        <action
+            android:id="@+id/action_mainAllPostFragment_to_mainSinglePostFragment"
+            app:destination="@id/mainSinglePostFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right"/>
+    </fragment>
+    <fragment
+        android:id="@+id/mainAddPostFragment"
+        android:name="com.ahad.travelapp.view.MainAddPostFragment"
+        android:label="fragment_main_add_post"
+        tools:layout="@layout/fragment_main_add_post" />
+    <fragment
+        android:id="@+id/mainProfileFragment"
+        android:name="com.ahad.travelapp.view.MainProfileFragment"
+        android:label="fragment_main_profile"
+        tools:layout="@layout/fragment_main_profile" />
+    <fragment
+        android:id="@+id/mainSinglePostFragment"
+        android:name="com.ahad.travelapp.view.MainSinglePostFragment"
+        android:label="fragment_main_single_post"
+        tools:layout="@layout/fragment_main_single_post" >
+        <action
+            android:id="@+id/action_mainSinglePostFragment_to_mainVideoPostFragment"
+            app:destination="@id/mainVideoPostFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right"/>
+        <argument
+            android:name="passed_post"
+            app:argType="com.ahad.travelapp.model.Post" />
+    </fragment>
+    <fragment
+        android:id="@+id/mainUserPostFragment"
+        android:name="com.ahad.travelapp.view.MainUserPostFragment"
+        android:label="fragment_main_user_post"
+        tools:layout="@layout/fragment_main_user_post" >
+        <action
+            android:id="@+id/action_mainUserPostFragment_to_mainSinglePostFragment"
+            app:destination="@id/mainSinglePostFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right"/>
+        <action
+            android:id="@+id/action_mainUserPostFragment_to_mainAddPostFragment"
+            app:destination="@id/mainAddPostFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right"/>
+    </fragment>
+    <fragment
+        android:id="@+id/mainVideoPostFragment"
+        android:name="com.ahad.travelapp.view.MainVideoPostFragment"
+        android:label="fragment_main_video_post"
+        tools:layout="@layout/fragment_main_video_post" >
+        <argument
+            android:name="passed_post"
+            app:argType="com.ahad.travelapp.model.Post" />
+    </fragment>
+</navigation>

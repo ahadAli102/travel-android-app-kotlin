@@ -78,4 +78,7 @@ dependencies {
     implementation 'com.google.android.exoplayer:exoplayer-core:2.15.0'
     implementation 'com.google.android.exoplayer:exoplayer-dash:2.15.0'
     implementation 'com.google.android.exoplayer:exoplayer-ui:2.15.0'
+
+    //circular
+    implementation 'de.hdodenhof:circleimageview:3.1.0'
 }
