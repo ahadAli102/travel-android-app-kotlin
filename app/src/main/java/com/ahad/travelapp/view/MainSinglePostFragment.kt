@@ -25,11 +25,6 @@ class MainSinglePostFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         val post = args.passedPost
         Log.d(TAG, "onViewCreated: $post")
-        button.setOnClickListener {
-            val bundle = Bundle()
-            bundle.putSerializable("passed_post", post)
-            findNavController().navigate(R.id.action_mainSinglePostFragment_to_mainVideoPostFragment,bundle)
-        }
     }
 
     companion object {

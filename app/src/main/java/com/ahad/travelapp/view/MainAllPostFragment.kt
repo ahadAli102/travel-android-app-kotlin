@@ -22,11 +22,6 @@ class MainAllPostFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        button.setOnClickListener {
-            val bundle = Bundle()
-            bundle.putSerializable("passed_post",Post("mail all post"))
-            findNavController().navigate(R.id.action_mainAllPostFragment_to_mainSinglePostFragment,bundle)
-        }
     }
 
     companion object {
