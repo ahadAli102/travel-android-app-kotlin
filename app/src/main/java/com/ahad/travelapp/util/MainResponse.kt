@@ -6,4 +6,6 @@ sealed class MainResponse<T>(val data: T? = null, val message: String? = null) {
     class Error<T>(message: String, data: T? = null) : MainResponse<T>(data, message)
 
     class Loading<T> : MainResponse<T>()
+
+    class Progress<T>(data: T) : MainResponse<T>(data)
 }

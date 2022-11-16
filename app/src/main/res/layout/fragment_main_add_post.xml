@@ -83,7 +83,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
                 android:layout_marginEnd="5dp"
-                android:text="Pick image"
+                android:text="Pick video"
                 android:textColor="@color/black"
                 android:textSize="18sp" />
 
@@ -96,8 +96,16 @@
                 android:text="no video is selected"
                 android:textSize="15sp" />
         </LinearLayout>
+        <TextView
+            android:id="@+id/addPostProgress"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:layout_marginEnd="5dp"
+            android:text="" />
 
         <Button
+            android:id="@+id/addPostAddButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"

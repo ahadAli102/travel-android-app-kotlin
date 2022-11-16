@@ -8,4 +8,15 @@ sealed class Constant{
             const val IMAGE_URL = "image_url"
         }
     }
+    class Post{
+        companion object{
+            const val LOCATION = "location"
+            const val DESCRIPTION = "description"
+            const val IMAGES = "images"
+            const val VIDEOS = "videos"
+            const val TIME = "time"
+            const val USER_ID = "userId"
+        }
+    }
+
 }

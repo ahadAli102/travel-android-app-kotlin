@@ -23,6 +23,10 @@ class MainUserPostFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        userPostAdd.setOnClickListener{
+            val action = MainUserPostFragmentDirections.actionMainUserPostFragmentToMainAddPostFragment()
+            Navigation.findNavController(it).navigate(action)
+        }
     }
 
     companion object {
