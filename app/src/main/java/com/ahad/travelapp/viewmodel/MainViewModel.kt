@@ -19,9 +19,13 @@ import kotlinx.coroutines.tasks.await
 class MainViewModel : ViewModel() {
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
     private lateinit var userProfileListenerRegistration: ListenerRegistration
+    private lateinit var userPostListenerRegistration: ListenerRegistration
     private var imageReference = FirebaseStorage.getInstance().getReference("user_profile_image")
     private var postReference =
         FirebaseStorage.getInstance().getReference("post_resource").child(FirebaseAuth.getInstance().currentUser!!.uid)
+
+
+    private lateinit var user: User
 
     private val _userProfileResponse = MutableLiveData<MainResponse<User>>()
     val userProfileResponse: LiveData<MainResponse<User>>
@@ -39,6 +43,14 @@ class MainViewModel : ViewModel() {
     val addPostResponse: LiveData<MainResponse<String>>
         get() = _addPostResponse
 
+    private val _userPostResponse = MutableLiveData<MainResponse<MutableList<Post>>>()
+    val userPostResponse: LiveData<MainResponse<MutableList<Post>>>
+        get() = _userPostResponse
+
+    private val _userPostDeleteResponse = MutableLiveData<MainResponse<String>>()
+    val userPostDeleteResponse: LiveData<MainResponse<String>>
+        get() = _userPostDeleteResponse
+
     init {
         loadUserInfo()
     }
@@ -54,8 +66,9 @@ class MainViewModel : ViewModel() {
                 Log.d(TAG, "loadUserInfo: response")
                 if(error != null){
                     Log.d(TAG, "loadUserInfo: error ${error.localizedMessage}")
+                    user = User(uId, "No user name", FirebaseAuth.getInstance().currentUser?.email!!, null)
                     _userProfileResponse.postValue(
-                        MainResponse.Error(error.localizedMessage,User(uId, "No user name", FirebaseAuth.getInstance().currentUser?.email!!, null))
+                        MainResponse.Error(error.localizedMessage,user)
                     )
                 }
                 if(value!=null){
@@ -66,13 +79,12 @@ class MainViewModel : ViewModel() {
                     value[Constant.User.IMAGE_URL]?.let {
                         imageUrl = it.toString()
                     }
+                    user = User(uId, name.toString(), email.toString(), imageUrl)
                     _userProfileResponse.postValue(
-                        MainResponse.Success(
-                            User(uId, name.toString(), email.toString(), imageUrl
-                            )
-                        )
+                        MainResponse.Success(user)
                     )
                 }
+                loadUserPost()
             }
     }
 
@@ -140,12 +152,12 @@ class MainViewModel : ViewModel() {
         val imageUrls = mutableListOf<String>()
         val videoUrls = mutableListOf<String>()
         for (image in images) {
-            imageUrls.add(savePostResource(pos,image,"images"))
+            imageUrls.add(savePostResource(pos,image,"images",post.time))
             _addPostResponse.postValue(MainResponse.Progress("${pos++} image is uploaded"))
         }
         pos = 1
         for (video in videos) {
-            videoUrls.add(savePostResource(pos,video,"videos"))
+            videoUrls.add(savePostResource(pos,video,"videos",post.time))
             _addPostResponse.postValue(MainResponse.Progress("${pos++} video is uploaded"))
         }
         val postMap = mutableMapOf<String,Any>()
@@ -163,8 +175,8 @@ class MainViewModel : ViewModel() {
             }
         }
     }
-    private suspend fun savePostResource(pos:Int, resource:Uri, type:String):String {
-        return postReference.child("${type}/${pos}")
+    private suspend fun savePostResource(pos:Int, resource:Uri, type:String, time:Long):String {
+        return postReference.child("${time}/${type}/${pos}")
             .putFile(resource)
             .await() // await() instead of snapshot
             .storage
@@ -172,7 +184,61 @@ class MainViewModel : ViewModel() {
             .await() // await the url
             .toString()
     }
+    private fun loadUserPost() {
+        _userPostResponse.postValue(MainResponse.Loading())
+        userPostListenerRegistration = firestore.collection(POSTS_KEY)
+            .whereEqualTo(Constant.Post.USER_ID , user.uId)
+            .orderBy(Constant.Post.TIME,Query.Direction.DESCENDING)
+            .addSnapshotListener(MetadataChanges.INCLUDE) { querySnapshot: QuerySnapshot?,
+                                                            firebaseFirestoreException: FirebaseFirestoreException? ->
+                firebaseFirestoreException?.let {
+                    _userPostResponse.postValue(MainResponse.Error(it.localizedMessage))
+                }
+                querySnapshot?.let {
+                    val userPosts = mutableListOf<Post>()
+                    for(document in it.documents){
+                        userPosts.add(
+                            Post(
+                                document.id,
+                                document[Constant.Post.LOCATION] as String,
+                                document[Constant.Post.DESCRIPTION] as String,
+                                document[Constant.Post.IMAGES] as List<String>,
+                                document[Constant.Post.VIDEOS] as List<String>,
+                                document[Constant.Post.TIME] as Long,
+                                user
+                            )
+                        )
+                    }
+                    _userPostResponse.postValue(MainResponse.Success(userPosts))
+                }
 
+            }
+    }
+
+    fun deletePost(post: Post) = viewModelScope.launch {
+        _userPostDeleteResponse.postValue(MainResponse.Loading())
+        deletePostContent(post)
+        firestore.collection(POSTS_KEY).document(post.id).delete().addOnCompleteListener {
+            if(it.isSuccessful){
+                _userPostDeleteResponse.postValue(MainResponse.Success("Post deleted"))
+            }else{
+                _userPostDeleteResponse.postValue(it.exception?.let { it1 ->
+                    MainResponse.Error(
+                        it1.localizedMessage
+                    )
+                })
+            }
+        }
+    }
+
+    private suspend fun deletePostContent(post: Post) {
+        for(image in post.images){
+            FirebaseStorage.getInstance().getReferenceFromUrl(image).delete().await()
+        }
+        for(videos in post.videos){
+            FirebaseStorage.getInstance().getReferenceFromUrl(videos).delete().await()
+        }
+    }
 
     companion object{
         private const val USER_PROFILE_KEY = "users"
