@@ -123,7 +123,6 @@ class MainUserPostFragment : Fragment() {
     private fun setupRecyclerView() {
         postAdapter = UserPostAdapter()
         userPostRecycler.apply {
-            adapter = UserPostAdapter()
             layoutManager = LinearLayoutManager(activity)
             adapter = postAdapter
         }

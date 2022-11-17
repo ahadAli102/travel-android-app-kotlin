@@ -70,7 +70,7 @@
         android:label="fragment_main_video_post"
         tools:layout="@layout/fragment_main_video_post" >
         <argument
-            android:name="passed_post"
-            app:argType="com.ahad.travelapp.model.Post" />
+            android:name="passed_post_video"
+            app:argType="string" />
     </fragment>
 </navigation>

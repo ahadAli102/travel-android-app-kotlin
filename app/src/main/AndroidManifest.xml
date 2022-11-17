@@ -3,6 +3,7 @@
     package="com.ahad.travelapp">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
 
     <application
         android:allowBackup="true"
@@ -11,14 +12,18 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".view.AuthActivity">
+        <activity
+            android:name=".view.AuthActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".view.MainActivity"/>
+        <activity
+            android:name=".view.MainActivity"
+            android:configChanges="orientation|keyboard|layoutDirection|screenSize"
+            android:launchMode="singleTask"/>
     </application>
 
 </manifest>
