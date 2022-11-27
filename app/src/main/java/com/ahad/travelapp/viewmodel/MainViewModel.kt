@@ -6,6 +6,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ahad.travelapp.model.Comment
 import com.ahad.travelapp.model.Post
 import com.ahad.travelapp.model.User
 import com.ahad.travelapp.util.Constant
@@ -20,6 +21,7 @@ class MainViewModel : ViewModel() {
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
     private lateinit var userProfileListenerRegistration: ListenerRegistration
     private lateinit var userPostListenerRegistration: ListenerRegistration
+    private lateinit var postCommentListenerRegistration: ListenerRegistration
     private var imageReference = FirebaseStorage.getInstance().getReference("user_profile_image")
     private var postReference =
         FirebaseStorage.getInstance().getReference("post_resource").child(FirebaseAuth.getInstance().currentUser!!.uid)
@@ -51,6 +53,14 @@ class MainViewModel : ViewModel() {
     val userPostDeleteResponse: LiveData<MainResponse<String>>
         get() = _userPostDeleteResponse
 
+    private val _addPostCommentResponse = MutableLiveData<MainResponse<String>>()
+    val addPostCommentResponse: LiveData<MainResponse<String>>
+        get() = _addPostCommentResponse
+
+    private val _postCommentsResponse = MutableLiveData<MainResponse<List<Comment>>>()
+    val postCommentsResponse: LiveData<MainResponse<List<Comment>>>
+        get() = _postCommentsResponse
+
     init {
         loadUserInfo()
     }
@@ -68,7 +78,7 @@ class MainViewModel : ViewModel() {
                     Log.d(TAG, "loadUserInfo: error ${error.localizedMessage}")
                     user = User(uId, "No user name", FirebaseAuth.getInstance().currentUser?.email!!, null)
                     _userProfileResponse.postValue(
-                        MainResponse.Error(error.localizedMessage,user)
+                        MainResponse.Error(error.localizedMessage!!,user)
                     )
                 }
                 if(value!=null){
@@ -102,7 +112,7 @@ class MainViewModel : ViewModel() {
                     }
                 }
                 else{
-                    _userImageInsertResponse.postValue(MainResponse.Error(task.exception!!.localizedMessage.toString()))
+                    _userImageInsertResponse.postValue(MainResponse.Error(task.exception!!.localizedMessage!!))
                 }
             }
     }
@@ -117,7 +127,7 @@ class MainViewModel : ViewModel() {
                     _userImageInsertResponse.postValue(MainResponse.Success("New image inserted"))
                 }
                 else{
-                    _userImageInsertResponse.postValue(MainResponse.Error(task.exception!!.localizedMessage.toString()))
+                    _userImageInsertResponse.postValue(MainResponse.Error(task.exception!!.localizedMessage!!))
                 }
             }
     }
@@ -129,7 +139,7 @@ class MainViewModel : ViewModel() {
         userMap[Constant.User.EMAIL] = user.email
         userMap[Constant.User.IMAGE_URL] = null
         user.imageUrl?.let {
-            userMap[Constant.User.IMAGE_URL] = it.toString()
+            userMap[Constant.User.IMAGE_URL] = it
         }
         firestore.collection(USER_PROFILE_KEY).document(user.uId).set(userMap)
             .addOnCompleteListener { task->
@@ -137,7 +147,7 @@ class MainViewModel : ViewModel() {
                     _userNameInsertResponse.postValue(MainResponse.Success("User name changed"))
                 }
                 else{
-                    _userNameInsertResponse.postValue(MainResponse.Error(task.exception!!.localizedMessage.toString()))
+                    _userNameInsertResponse.postValue(MainResponse.Error(task.exception!!.localizedMessage!!))
                 }
             }
     }
@@ -171,7 +181,7 @@ class MainViewModel : ViewModel() {
             if(task.isSuccessful){
                 _addPostResponse.postValue(MainResponse.Success("Post is inserted"))
             }else{
-                _addPostResponse.postValue(MainResponse.Error(task.exception!!.localizedMessage))
+                _addPostResponse.postValue(MainResponse.Error(task.exception!!.localizedMessage!!))
             }
         }
     }
@@ -192,7 +202,7 @@ class MainViewModel : ViewModel() {
             .addSnapshotListener(MetadataChanges.INCLUDE) { querySnapshot: QuerySnapshot?,
                                                             firebaseFirestoreException: FirebaseFirestoreException? ->
                 firebaseFirestoreException?.let {
-                    _userPostResponse.postValue(MainResponse.Error(it.localizedMessage))
+                    _userPostResponse.postValue(MainResponse.Error(it.localizedMessage!!))
                 }
                 querySnapshot?.let {
                     val userPosts = mutableListOf<Post>()
@@ -224,7 +234,7 @@ class MainViewModel : ViewModel() {
             }else{
                 _userPostDeleteResponse.postValue(it.exception?.let { it1 ->
                     MainResponse.Error(
-                        it1.localizedMessage
+                        it1.localizedMessage!!
                     )
                 })
             }
@@ -240,9 +250,66 @@ class MainViewModel : ViewModel() {
         }
     }
 
+    fun savePostComment(post: Post, comment: Comment) = viewModelScope.launch{
+        _addPostCommentResponse.postValue(MainResponse.Loading())
+
+        val commentMap = mutableMapOf<String,Any?>()
+        commentMap[Constant.Comment.COMMENT] = comment.comment
+        commentMap[Constant.Comment.TIME] = comment.time
+        commentMap[Constant.Comment.USER_IMAGE] = user.imageUrl
+        commentMap[Constant.Comment.USER_NAME] = user.name
+
+        firestore.collection(ALL_COMMENTS_KEY).document(post.id).collection(COMMENTS_KEY).document(user.uId)
+            .set(commentMap, SetOptions.merge()).addOnCompleteListener { task->
+                if(task.isSuccessful){
+                    _addPostCommentResponse.postValue(MainResponse.Success("Comment has inserted"))
+                }
+                else if(task.exception!=null){
+                    _addPostCommentResponse.postValue(MainResponse.Error(task.exception!!.localizedMessage!!))
+                }
+            }
+    }
+
+    fun loadPostComments(post: Post) = viewModelScope.launch{
+        _postCommentsResponse.postValue(MainResponse.Loading())
+        postCommentListenerRegistration = firestore.collection(ALL_COMMENTS_KEY).document(post.id).collection(COMMENTS_KEY)
+            .orderBy(Constant.Comment.TIME,Query.Direction.DESCENDING)
+            .addSnapshotListener(MetadataChanges.INCLUDE) {
+                    querySnapshot: QuerySnapshot?,
+                    firebaseFirestoreException: FirebaseFirestoreException? ->
+
+                firebaseFirestoreException?.let {
+                    _postCommentsResponse.postValue(MainResponse.Error(it.localizedMessage!!))
+                }
+
+                querySnapshot?.let {
+                    val comments = mutableListOf<Comment>()
+                    for(document in it.documents){
+                        comments.add(
+                            Comment(
+                                document.id,
+                                document[Constant.Comment.COMMENT] as String,
+                                document[Constant.Comment.TIME] as Long,
+                                User("",
+                                    (document[Constant.Comment.USER_NAME]?:"No name") as String,"",
+                                    (document[Constant.Comment.USER_IMAGE]?:"") as String)
+                            )
+                        )
+                    }
+                    _postCommentsResponse.postValue(MainResponse.Success(comments))
+                }
+            }
+    }
+
+    fun removePostCommentListener(){
+        postCommentListenerRegistration.remove()
+    }
+
     companion object{
         private const val USER_PROFILE_KEY = "users"
         private const val POSTS_KEY = "posts"
+        private const val ALL_COMMENTS_KEY = "all_comments"
+        private const val COMMENTS_KEY = "comments"
         private const val TAG = "MyTag:MainViewModel"
     }
 }

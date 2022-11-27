@@ -18,5 +18,13 @@ sealed class Constant{
             const val USER_ID = "userId"
         }
     }
+    class Comment{
+        companion object{
+            const val COMMENT = "comment"
+            const val TIME = "time"
+            const val USER_NAME = "userName"
+            const val USER_IMAGE = "userImage"
+        }
+    }
 
 }
