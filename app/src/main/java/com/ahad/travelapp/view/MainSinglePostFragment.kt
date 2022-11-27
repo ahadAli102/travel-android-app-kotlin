@@ -54,10 +54,9 @@ class MainSinglePostFragment : Fragment() {
             layoutManager = LinearLayoutManager(activity, RecyclerView.HORIZONTAL, false)
             adapter = imageAdapter
         }
-        Log.d(TAG, "setupImageRecyclerView: ${post.images}")
     }
     private fun setupVideoRecyclerView(post:Post) {
-        videoAdapter = SinglePostVideoAdapter(post.images)
+        videoAdapter = SinglePostVideoAdapter(post.videos)
         singleVideoRecycler.apply {
             layoutManager = LinearLayoutManager(activity, RecyclerView.HORIZONTAL, false)
             adapter = videoAdapter
