@@ -135,6 +135,6 @@ class MainSinglePostFragment : Fragment() {
     }
 
     companion object {
-        private const val TAG="MyTag:MainActSinPoF"
+        private const val TAG = "MyTag:SinglePost"
     }
 }

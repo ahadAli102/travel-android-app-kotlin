@@ -129,6 +129,6 @@ class MainUserPostFragment : Fragment() {
     }
 
     companion object {
-        private const val TAG="MyTag:MainActUsPoF"
+        private const val TAG = "MyTag:UserPostFragment"
     }
 }

@@ -11,6 +11,7 @@ import com.ahad.travelapp.model.Post
 import com.ahad.travelapp.model.User
 import com.ahad.travelapp.util.Constant
 import com.ahad.travelapp.util.MainResponse
+import com.ahad.travelapp.view.MainAllPostFragment
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.*
 import com.google.firebase.storage.FirebaseStorage
@@ -26,6 +27,7 @@ class MainViewModel : ViewModel() {
     private var postReference =
         FirebaseStorage.getInstance().getReference("post_resource").child(FirebaseAuth.getInstance().currentUser!!.uid)
 
+    private var lastVisible: DocumentSnapshot? = null
 
     private lateinit var user: User
 
@@ -61,8 +63,16 @@ class MainViewModel : ViewModel() {
     val postCommentsResponse: LiveData<MainResponse<List<Comment>>>
         get() = _postCommentsResponse
 
+    private val _allPostResponse = MutableLiveData<MainResponse<MutableList<Post>>>()
+    val allPostResponse: LiveData<MainResponse<MutableList<Post>>>
+        get() = _allPostResponse
+
+    private val allPosts = mutableListOf<Post>()
+    private val usersMap = mutableMapOf<String, User>()
+
     init {
         loadUserInfo()
+        loadAllPost()
     }
 
     private fun loadUserInfo() = viewModelScope.launch {
@@ -194,6 +204,7 @@ class MainViewModel : ViewModel() {
             .await() // await the url
             .toString()
     }
+
     private fun loadUserPost() {
         _userPostResponse.postValue(MainResponse.Loading())
         userPostListenerRegistration = firestore.collection(POSTS_KEY)
@@ -221,7 +232,6 @@ class MainViewModel : ViewModel() {
                     }
                     _userPostResponse.postValue(MainResponse.Success(userPosts))
                 }
-
             }
     }
 
@@ -303,6 +313,56 @@ class MainViewModel : ViewModel() {
 
     fun removePostCommentListener(){
         postCommentListenerRegistration.remove()
+    }
+
+    fun loadAllPost() = viewModelScope.launch {
+        Log.d(TAG, "loadAllPost: called")
+        _allPostResponse.postValue(MainResponse.Loading())
+        lateinit var query:Query
+        if(allPosts.size==0) {
+            query = firestore.collection(POSTS_KEY)
+                .orderBy(Constant.Post.TIME,Query.Direction.DESCENDING)
+                .limit(5)
+            Log.d(TAG, "loadAllPost: first")
+        }else{
+            query = firestore.collection(POSTS_KEY)
+                .orderBy(Constant.Post.TIME,Query.Direction.DESCENDING)
+                .startAfter(lastVisible as DocumentSnapshot)
+                .limit(5)
+            Log.d(TAG, "loadAllPost: paginate")
+        }
+
+        val documentSnapshots = query.get().await()
+        for(document in documentSnapshots){
+            val uId = document[Constant.Post.USER_ID].toString()
+
+            if(!usersMap.containsKey(uId)){
+                val useDocument = firestore.collection(USER_PROFILE_KEY).document(uId).get().await()
+                val name = useDocument[Constant.User.NAME]?:"No name"
+                val email = useDocument[Constant.User.EMAIL]?:"No email"
+                var imageUrl:String? = null
+                useDocument[Constant.User.IMAGE_URL]?.let {
+                    imageUrl = it.toString()
+                }
+                usersMap[uId] = User(uId, name.toString(), email.toString(), imageUrl)
+            }
+            Log.d(TAG, "loadAllPost: postId: ${document.id}  uId: $uId")
+            val post = Post(
+                document.id,
+                document[Constant.Post.LOCATION] as String,
+                document[Constant.Post.DESCRIPTION] as String,
+                document[Constant.Post.IMAGES] as List<String>,
+                document[Constant.Post.VIDEOS] as List<String>,
+                document[Constant.Post.TIME] as Long,
+                usersMap[uId]!!
+            )
+            Log.d(TAG, "loadAllPost: ${post.id}---${post.time}    ${post.user.uId}---${post.user.name}")
+            allPosts.add(post)
+            lastVisible = document
+        }
+        _allPostResponse.postValue(MainResponse.Success(allPosts))
+        Log.d(TAG, "loadAllPost: users $usersMap")
+        Log.d(TAG, "loadAllPost: last post $lastVisible")
     }
 
     companion object{
