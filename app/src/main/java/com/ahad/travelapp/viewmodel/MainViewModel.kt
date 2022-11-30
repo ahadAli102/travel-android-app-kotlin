@@ -67,6 +67,10 @@ class MainViewModel : ViewModel() {
     val allPostResponse: LiveData<MainResponse<MutableList<Post>>>
         get() = _allPostResponse
 
+    private val _searchedPostResponse = MutableLiveData<MainResponse<MutableList<Post>>>()
+    val searchedPostResponse: LiveData<MainResponse<MutableList<Post>>>
+        get() = _searchedPostResponse
+
     private val allPosts = mutableListOf<Post>()
     private val usersMap = mutableMapOf<String, User>()
 
@@ -363,6 +367,44 @@ class MainViewModel : ViewModel() {
         _allPostResponse.postValue(MainResponse.Success(allPosts))
         Log.d(TAG, "loadAllPost: users $usersMap")
         Log.d(TAG, "loadAllPost: last post $lastVisible")
+    }
+
+    fun searchPost(query:String) = viewModelScope.launch {
+        _searchedPostResponse.postValue(MainResponse.Loading())
+        val searchQuery = firestore.collection(POSTS_KEY)
+            .orderBy(Constant.Post.LOCATION)
+            .whereGreaterThanOrEqualTo(Constant.Post.LOCATION,query)
+            .whereLessThanOrEqualTo(Constant.Post.LOCATION,query+"\uF7FF")
+            .orderBy(Constant.Post.TIME,Query.Direction.DESCENDING)
+
+        val documentSnapshots = searchQuery.get().await()
+        val posts = mutableListOf<Post>()
+        for(document in documentSnapshots){
+            val uId = document[Constant.Post.USER_ID].toString()
+
+            if(!usersMap.containsKey(uId)){
+                val useDocument = firestore.collection(USER_PROFILE_KEY).document(uId).get().await()
+                val name = useDocument[Constant.User.NAME]?:"No name"
+                val email = useDocument[Constant.User.EMAIL]?:"No email"
+                var imageUrl:String? = null
+                useDocument[Constant.User.IMAGE_URL]?.let {
+                    imageUrl = it.toString()
+                }
+                usersMap[uId] = User(uId, name.toString(), email.toString(), imageUrl)
+            }
+            val post = Post(
+                document.id,
+                document[Constant.Post.LOCATION] as String,
+                document[Constant.Post.DESCRIPTION] as String,
+                document[Constant.Post.IMAGES] as List<String>,
+                document[Constant.Post.VIDEOS] as List<String>,
+                document[Constant.Post.TIME] as Long,
+                usersMap[uId]!!
+            )
+            posts.add(post)
+        }
+        _searchedPostResponse.postValue(MainResponse.Success(posts))
+
     }
 
     companion object{

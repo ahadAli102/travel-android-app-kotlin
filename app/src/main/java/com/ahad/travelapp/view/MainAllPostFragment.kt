@@ -8,8 +8,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.AbsListView
 import android.widget.Toast
+import androidx.appcompat.widget.SearchView
 import androidx.navigation.Navigation
-import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.ahad.travelapp.R
@@ -18,6 +18,10 @@ import com.ahad.travelapp.model.Post
 import com.ahad.travelapp.util.MainResponse
 import com.ahad.travelapp.viewmodel.MainViewModel
 import kotlinx.android.synthetic.main.fragment_main_all_post.*
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class MainAllPostFragment : Fragment() {
     private lateinit var postAdapter: AllPostAdapter
@@ -25,6 +29,8 @@ class MainAllPostFragment : Fragment() {
     private var firstLoading:Boolean = true
     private var reachedEnd:Boolean = false
     private var postSize = 0
+    private var isSearchedPosts:Boolean = false
+    private lateinit var posts:MutableList<Post>
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -60,6 +66,7 @@ class MainAllPostFragment : Fragment() {
                         reachedEnd = postSize == it.size
                         postSize = it.size
                         postAdapter.differ.submitList(it.toList())
+                        posts = it
                     }
                 }
                 is MainResponse.Error -> {
@@ -68,6 +75,29 @@ class MainAllPostFragment : Fragment() {
                     paginateProgressBar.visibility = View.GONE
                 }
             }
+            isSearchedPosts = false
+            setSearchListener()
+        })
+        mainViewModel.searchedPostResponse.observe(viewLifecycleOwner, { response ->
+            when (response) {
+                is MainResponse.Loading -> {
+                    firstProgressBar.visibility = View.VISIBLE
+                }
+                is MainResponse.Success -> {
+                    response.data?.let {
+                        firstProgressBar.visibility = View.GONE
+                        paginateProgressBar.visibility = View.GONE
+                        reachedEnd = postSize == it.size
+                        postSize = it.size
+                        postAdapter.differ.submitList(it.toList())
+                    }
+                }
+                is MainResponse.Error -> {
+                    Toast.makeText(context, response.data.toString(), Toast.LENGTH_SHORT).show()
+                    firstProgressBar.visibility = View.GONE
+                }
+            }
+            isSearchedPosts = true
         })
     }
 
@@ -104,7 +134,7 @@ class MainAllPostFragment : Fragment() {
             val isNotAtBeginning = firstVisibleItemPosition >= 0
 
             val shouldPaginate = isNotLoadingAndNotLastPage && isAtLastItem && isNotAtBeginning
-                    && isScrolling && !reachedEnd
+                    && isScrolling && !reachedEnd && !isSearchedPosts
 
             if(shouldPaginate) {
                 mainViewModel.loadAllPost()
@@ -119,6 +149,33 @@ class MainAllPostFragment : Fragment() {
             }
             super.onScrolled(recyclerView, dx, dy)
         }
+    }
+
+    private fun setSearchListener() {
+        var job: Job? = null
+        allPostSearch.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                return false
+            }
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+                job?.cancel()
+                job = MainScope().launch {
+                    delay(500)
+                    newText?.let {
+                        val query = newText.toString().trim()
+                        if (query.isNotEmpty()) {
+                            mainViewModel.searchPost(query)
+                        }
+                        else{
+                            postAdapter.differ.submitList(posts.toList())
+                            isSearchedPosts = false
+                        }
+                    }
+                }
+                return true
+            }
+        })
     }
 
     companion object {
