@@ -26,5 +26,11 @@ sealed class Constant{
             const val USER_IMAGE = "userImage"
         }
     }
+    class Rating{
+        companion object{
+            const val RATING = "rating"
+            const val TIME = "time"
+        }
+    }
 
 }

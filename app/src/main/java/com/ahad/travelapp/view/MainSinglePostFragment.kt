@@ -22,6 +22,7 @@ import com.ahad.travelapp.util.MainResponse
 import com.ahad.travelapp.viewmodel.MainViewModel
 import kotlinx.android.synthetic.main.fragment_main_single_post.*
 import kotlinx.android.synthetic.main.fragment_main_single_post.singlePostUserName
+import java.lang.Exception
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -100,10 +101,49 @@ class MainSinglePostFragment : Fragment() {
                     Toast.makeText(requireContext(), "Failed to post comment${response.message}", Toast.LENGTH_SHORT).show()
                 }
             }
+        })
+
+        mainViewModel.postRatingResponse.observe(viewLifecycleOwner, { response ->
+            when (response) {
+                is MainResponse.Loading -> {
+                    Log.d(TAG, "onViewCreated: rating loading")
+                }
+                is MainResponse.Success -> {
+                    singlePostAvgRating.text = "Rating:${response.data?.average}"
+                    singlePostTotalRating.text = "Ratings:${response.data?.amount}"
+                }
+                is MainResponse.Error -> {
+                    Toast.makeText(requireContext(), "Failed to post comment${response.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
 
         })
 
+        mainViewModel.addPostRatingResponse.observe(viewLifecycleOwner, { response ->
+            when (response) {
+                is MainResponse.Loading -> {
+                    Log.d(TAG, "onViewCreated: rating loading")
+                }
+                is MainResponse.Success -> {
+                    Toast.makeText(requireContext(), response.data, Toast.LENGTH_SHORT).show()
+                }
+                is MainResponse.Error -> {
+                    Toast.makeText(requireContext(), "Failed to post rating:${response.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        })
+
+        singlePostRatingPost.setOnClickListener {
+            try {
+                val rating:Int = Integer.parseInt(singlePostRatingAdd.text.toString())
+                mainViewModel.savePostRating(post,rating)
+            }catch (e:Exception){
+                Toast.makeText(requireContext(), "Please enter rating properly", Toast.LENGTH_SHORT).show()
+            }
+        }
+
         mainViewModel.loadPostComments(post)
+        mainViewModel.loadPostRating(post)
     }
 
     private fun setupImageRecyclerView(post:Post) {
@@ -131,7 +171,7 @@ class MainSinglePostFragment : Fragment() {
 
     override fun onDestroy() {
         super.onDestroy()
-        mainViewModel.removePostCommentListener()
+        mainViewModel.removePostListeners()
     }
 
     companion object {

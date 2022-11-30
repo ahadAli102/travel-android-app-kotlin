@@ -8,10 +8,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ahad.travelapp.model.Comment
 import com.ahad.travelapp.model.Post
+import com.ahad.travelapp.model.Rating
 import com.ahad.travelapp.model.User
 import com.ahad.travelapp.util.Constant
 import com.ahad.travelapp.util.MainResponse
-import com.ahad.travelapp.view.MainAllPostFragment
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.*
 import com.google.firebase.storage.FirebaseStorage
@@ -23,6 +23,7 @@ class MainViewModel : ViewModel() {
     private lateinit var userProfileListenerRegistration: ListenerRegistration
     private lateinit var userPostListenerRegistration: ListenerRegistration
     private lateinit var postCommentListenerRegistration: ListenerRegistration
+    private lateinit var postRatingListenerRegistration: ListenerRegistration
     private var imageReference = FirebaseStorage.getInstance().getReference("user_profile_image")
     private var postReference =
         FirebaseStorage.getInstance().getReference("post_resource").child(FirebaseAuth.getInstance().currentUser!!.uid)
@@ -62,6 +63,14 @@ class MainViewModel : ViewModel() {
     private val _postCommentsResponse = MutableLiveData<MainResponse<List<Comment>>>()
     val postCommentsResponse: LiveData<MainResponse<List<Comment>>>
         get() = _postCommentsResponse
+
+    private val _addPostRatingResponse = MutableLiveData<MainResponse<String>>()
+    val addPostRatingResponse: LiveData<MainResponse<String>>
+        get() = _addPostRatingResponse
+
+    private val _postRatingResponse = MutableLiveData<MainResponse<Rating>>()
+    val postRatingResponse: LiveData<MainResponse<Rating>>
+        get() = _postRatingResponse
 
     private val _allPostResponse = MutableLiveData<MainResponse<MutableList<Post>>>()
     val allPostResponse: LiveData<MainResponse<MutableList<Post>>>
@@ -315,8 +324,9 @@ class MainViewModel : ViewModel() {
             }
     }
 
-    fun removePostCommentListener(){
+    fun removePostListeners(){
         postCommentListenerRegistration.remove()
+        postRatingListenerRegistration.remove()
     }
 
     fun loadAllPost() = viewModelScope.launch {
@@ -407,11 +417,55 @@ class MainViewModel : ViewModel() {
 
     }
 
+    fun savePostRating(post: Post, rating: Int) = viewModelScope.launch{
+        _addPostRatingResponse.postValue(MainResponse.Loading())
+
+        val ratingMap = mutableMapOf<String,Any?>()
+       ratingMap[Constant.Rating.RATING] = rating
+       ratingMap[Constant.Rating.TIME] = System.currentTimeMillis()
+
+        firestore.collection(ALL_RATINGS_KEY).document(post.id).collection(RATINGS_KEY).document(user.uId)
+            .set(ratingMap, SetOptions.merge()).addOnCompleteListener { task->
+                if(task.isSuccessful){
+                    _addPostRatingResponse.postValue(MainResponse.Success("Comment has inserted"))
+                }
+                else if(task.exception!=null){
+                    _addPostRatingResponse.postValue(MainResponse.Error(task.exception!!.localizedMessage!!))
+                }
+            }
+    }
+
+    fun loadPostRating(post: Post) = viewModelScope.launch{
+        _postRatingResponse.postValue(MainResponse.Loading())
+        postRatingListenerRegistration = firestore.collection(ALL_RATINGS_KEY).document(post.id).collection(RATINGS_KEY)
+            .addSnapshotListener(MetadataChanges.INCLUDE) {
+                    querySnapshot: QuerySnapshot?,
+                    firebaseFirestoreException: FirebaseFirestoreException? ->
+
+                firebaseFirestoreException?.let {
+                    _postRatingResponse.postValue(MainResponse.Error(it.localizedMessage!!))
+                }
+
+                querySnapshot?.let {
+                    var count = 0
+                    var total:Long = 0
+                    for(document in it.documents){
+                        count++
+                        total += document[Constant.Rating.RATING]  as Long
+                    }
+                    _postRatingResponse.postValue(MainResponse.Success(Rating(count,"%,.2f".format(total*1.0/count).toDouble())))
+                }
+            }
+
+    }
+
     companion object{
         private const val USER_PROFILE_KEY = "users"
         private const val POSTS_KEY = "posts"
         private const val ALL_COMMENTS_KEY = "all_comments"
         private const val COMMENTS_KEY = "comments"
+        private const val ALL_RATINGS_KEY = "all_ratings"
+        private const val RATINGS_KEY = "ratings"
         private const val TAG = "MyTag:MainViewModel"
     }
 }

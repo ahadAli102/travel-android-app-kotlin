@@ -113,6 +113,62 @@
                 android:layout_height="200dp"
                 tools:listitem="@layout/comment_layout"/>
 
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_margin="10dp"
+                android:padding="5dp"
+                android:layout_height="wrap_content"
+                android:elevation="5dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:layout_marginTop="2dp"
+                    android:layout_marginBottom="2dp">
+                    <TextView
+                        android:id="@+id/singlePostAvgRating"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Rating:8.5"
+                        android:textColor="@color/black"
+                        android:textSize="18sp"/>
+
+                    <TextView
+                        android:id="@+id/singlePostTotalRating"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Ratings:7"
+                        android:layout_marginStart="5dp"
+                        android:layout_marginEnd="10dp"
+                        android:textColor="@color/black"
+                        android:textSize="18sp"/>
+
+                    <EditText
+                        android:id="@+id/singlePostRatingAdd"
+                        android:layout_width="50dp"
+                        android:layout_height="wrap_content"
+                        android:hint="rate"
+                        android:inputType="number"
+                        android:maxEms="2"
+                        android:layout_marginStart="5dp"
+                        android:layout_marginEnd="5dp"
+                        android:textColor="@color/black"
+                        android:textSize="18sp"/>
+
+                    <Button
+                        android:id="@+id/singlePostRatingPost"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="post"
+                        android:background="@drawable/single_button_design"
+                        android:textColor="@color/black"
+                        android:textSize="18sp"/>
+
+
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
         </LinearLayout>
     </ScrollView>
 
