@@ -86,6 +86,16 @@ class MainProfileFragment : Fragment() {
                 }
             }
         })
+
+        mainViewModel.postStatResponse.observe(viewLifecycleOwner, { response ->
+            when (response) {
+                is MainResponse.Success -> {
+                    totalPosts.text = "Posts:${response.data?.postsAmount}"
+                    singlePostTotalRating.text = "Ratings:${response.data?.postRatings}"
+                    singlePostAvgRating.text = "Rating:${response.data?.postRating}"
+                }
+            }
+        })
         profileImageId.setOnClickListener {
             Log.d(TAG, "onViewCreated: profile click")
             Snackbar.make(view, "Do you want to change profile image?", Snackbar.LENGTH_SHORT)

@@ -29,7 +29,8 @@ sealed class Constant{
     class Rating{
         companion object{
             const val RATING = "rating"
-            const val TIME = "time"
+            const val USER_ID = "userId"
+            const val POST_ID = "postId"
         }
     }
 

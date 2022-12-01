@@ -6,10 +6,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ahad.travelapp.model.Comment
-import com.ahad.travelapp.model.Post
-import com.ahad.travelapp.model.Rating
-import com.ahad.travelapp.model.User
+import com.ahad.travelapp.model.*
 import com.ahad.travelapp.util.Constant
 import com.ahad.travelapp.util.MainResponse
 import com.google.firebase.auth.FirebaseAuth
@@ -80,8 +77,14 @@ class MainViewModel : ViewModel() {
     val searchedPostResponse: LiveData<MainResponse<MutableList<Post>>>
         get() = _searchedPostResponse
 
+    private val _postStatResponse = MutableLiveData<MainResponse<PostStat>>()
+    val postStatResponse: LiveData<MainResponse<PostStat>>
+        get() = _postStatResponse
+
     private val allPosts = mutableListOf<Post>()
     private val usersMap = mutableMapOf<String, User>()
+    private val postStat = PostStat(0,0.0f,0)
+
 
     init {
         loadUserInfo()
@@ -117,6 +120,7 @@ class MainViewModel : ViewModel() {
                         MainResponse.Success(user)
                     )
                 }
+                loadPostStat()
                 loadUserPost()
             }
     }
@@ -244,6 +248,7 @@ class MainViewModel : ViewModel() {
                         )
                     }
                     _userPostResponse.postValue(MainResponse.Success(userPosts))
+                    postStat.postsAmount = userPosts.size
                 }
             }
     }
@@ -421,13 +426,16 @@ class MainViewModel : ViewModel() {
         _addPostRatingResponse.postValue(MainResponse.Loading())
 
         val ratingMap = mutableMapOf<String,Any?>()
-       ratingMap[Constant.Rating.RATING] = rating
-       ratingMap[Constant.Rating.TIME] = System.currentTimeMillis()
+        ratingMap[Constant.Rating.RATING] = rating
+        ratingMap[Constant.Rating.POST_ID] = post.id
+        ratingMap[Constant.Rating.USER_ID] = post.user.uId
 
-        firestore.collection(ALL_RATINGS_KEY).document(post.id).collection(RATINGS_KEY).document(user.uId)
-            .set(ratingMap, SetOptions.merge()).addOnCompleteListener { task->
+        firestore.collection(ALL_RATINGS_KEY)
+            .document("${post.id}-${user.uId}")
+            .set(ratingMap, SetOptions.merge())
+            .addOnCompleteListener { task->
                 if(task.isSuccessful){
-                    _addPostRatingResponse.postValue(MainResponse.Success("Comment has inserted"))
+                    _addPostRatingResponse.postValue(MainResponse.Success("Rating has inserted"))
                 }
                 else if(task.exception!=null){
                     _addPostRatingResponse.postValue(MainResponse.Error(task.exception!!.localizedMessage!!))
@@ -437,7 +445,8 @@ class MainViewModel : ViewModel() {
 
     fun loadPostRating(post: Post) = viewModelScope.launch{
         _postRatingResponse.postValue(MainResponse.Loading())
-        postRatingListenerRegistration = firestore.collection(ALL_RATINGS_KEY).document(post.id).collection(RATINGS_KEY)
+        postRatingListenerRegistration = firestore.collection(ALL_RATINGS_KEY)
+            .whereEqualTo(Constant.Rating.POST_ID,post.id)
             .addSnapshotListener(MetadataChanges.INCLUDE) {
                     querySnapshot: QuerySnapshot?,
                     firebaseFirestoreException: FirebaseFirestoreException? ->
@@ -459,13 +468,31 @@ class MainViewModel : ViewModel() {
 
     }
 
+    private fun loadPostStat() {
+        firestore.collection(ALL_RATINGS_KEY)
+            .whereEqualTo(Constant.Rating.USER_ID, user.uId)
+            .addSnapshotListener(MetadataChanges.INCLUDE){ querySnapshot: QuerySnapshot?, firebaseFirestoreException: FirebaseFirestoreException? ->
+                querySnapshot?.let {
+                    var total:Long = 0
+                    for(document in it.documents){
+                        Log.d(TAG, "loadPostStat: ${document.id}  ${document[Constant.Rating.RATING]} ")
+                        total += document[Constant.Rating.RATING]  as Long
+                    }
+                    if(total!=0L){
+                        postStat.postRatings = it.size()
+                        postStat.postRating = "%,.2f".format(total*1.0/postStat.postRatings).toFloat()
+                    }
+                }
+                _postStatResponse.postValue(MainResponse.Success(postStat))
+            }
+    }
+
     companion object{
         private const val USER_PROFILE_KEY = "users"
         private const val POSTS_KEY = "posts"
         private const val ALL_COMMENTS_KEY = "all_comments"
         private const val COMMENTS_KEY = "comments"
         private const val ALL_RATINGS_KEY = "all_ratings"
-        private const val RATINGS_KEY = "ratings"
         private const val TAG = "MyTag:MainViewModel"
     }
 }
